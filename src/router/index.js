@@ -1,14 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import { authStore } from '@/stores/auth'
+import IndexView from '../views/IndexView.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView
+      name: 'index',
+      component: IndexView
     },
     {
       path: '/login',
@@ -16,9 +16,9 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue')
     },
     {
-      path: '/dashboard',
-      name: 'dashboard',
-      component: () => import('../views/DashboardView.vue'),
+      path: '/home',
+      name: 'home',
+      component: () => import('../views/HomeView.vue'),
       meta: {
         auth: true
       }
@@ -28,18 +28,22 @@ const router = createRouter({
 
 // antes de cada rota, vai ser executado oq esta dentro do beforeEach
 router.beforeEach(async (to, from, next) => {
-  if(to.meta?.auth) {
-    const auth = authStore()
+  if (to.meta?.auth) {
+    const auth = useAuthStore()
 
-    if(auth.token && auth.user) {
-      const isAuthenticated = await auth.checkToken()
+    if (auth.token && auth.user) {
+      console.log("tem token e user")
+      const isAuthenticated = await auth.isTokenValid()
 
-      if(isAuthenticated) {
+      if (isAuthenticated) {
         next()
       }
     }
 
-    next({name: 'login'})
+    next({
+      name: 'login',
+      query: { error: 'Login expirado' }
+    })
   } else {
     next()
   }

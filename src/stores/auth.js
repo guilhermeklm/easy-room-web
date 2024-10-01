@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
-import http from '@/services/http.js'
+import { ref } from 'vue'
+import { jwtDecode } from 'jwt-decode';
 
-export const authStore = defineStore('auth', () => {
+export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token'))
   const user = ref(JSON.parse(localStorage.getItem('user')))
 
@@ -20,26 +20,24 @@ export const authStore = defineStore('auth', () => {
     return token.value && user.value
   }
 
-  const fullName = computed(() => {
-    return user.value.firstName + ' ' + user.value.lastName
-  })
-
-  async function checkToken() {
+  function isTokenValid() {
     try {
-      const tokenAuth = 'Bearer ' + token.value
-      const { data } = http.get('/auth/verify', {
-        headers: {
-          Authorization: tokenAuth
-        }
-      })
+      const decoded = jwtDecode(token.value);
+      const currentTime = Date.now() / 1000;
 
-      return data
+      if (decoded.exp < currentTime) {
+        return false
+      } else {
+        return true
+      }
+
     } catch (error) {
-      console.log(error.response?.data)
+      console.log(error)
+      return false
     }
   }
 
   return {
-    token, user, setToken, setUser, checkToken, isAuthenticated, fullName
+    token, user, setToken, setUser, isTokenValid, isAuthenticated
   }
 })
