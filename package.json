@@ -11,9 +11,11 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@vuepic/vue-datepicker": "^9.0.3",
     "axios": "^1.7.6",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
+    "moment-timezone": "^0.5.45",
     "pinia": "^2.2.2",
     "qalendar": "^3.8.1",
     "vue": "^3.4.29",
