@@ -1,45 +1,214 @@
 <template>
-  <h2>Reservar sala</h2>
+  <h2>Reservar Sala</h2>
 
-  <div>
-    <label>Titulo</label>
-    <input type="text" />
-    <label>Data e hora Inicio</label>
-    <VueDatePicker v-model="minDate" :format="format" :minDate="todayDate" :timezone="timezone" />
-    <label>Data e hora Fim</label>
-    <VueDatePicker v-model="maxDate" :format="format" :minDate="minDateAux" :timezone="timezone" />
-    <label>Descricao</label>
-    <input type="text" maxlength="300" />
+  <div class="form-container">
+    <div class="overlay" v-if="loading">
+      <VueSpinner size="50" color="black" />
+    </div>
+
+    <div class="form-group">
+      <label for="title">Título</label>
+      <input id="title" v-model="title" type="text" />
+    </div>
+
+    <div class="form-group">
+      <label for="room">Sala</label>
+      <select id="room" v-model="roomId">
+        <option disabled value="">Selecione uma sala</option>
+        <option v-for="room in roomOptions" :key="room._roomId" :value="room._roomId">
+          {{ room._name }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="start">Data e hora Início</label>
+      <VueDatePicker
+        id="start"
+        v-model="startDateTime"
+        :format="format"
+        :min-date="todayDate"
+        :timezone="timezone"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="end">Data e hora Fim</label>
+      <VueDatePicker
+        id="end"
+        v-model="endDateTime"
+        :format="format"
+        :min-date="minDateAux"
+        :timezone="timezone"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="description">Descrição</label>
+      <input id="description" v-model="description" type="text" maxlength="300" />
+    </div>
+
+    <button @click="submit">Reservar</button>
+
+    <div v-if="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
   </div>
 </template>
 
 <script>
 import VueDatePicker from '@vuepic/vue-datepicker'
 import moment from 'moment'
-const todayDate = moment().format('MM-DD-yyyy, HH:mm')
+import axiosInstance from '@/services/http'
+import { useAuthStore } from '@/stores/auth'
+import { VueSpinner } from 'vue3-spinners'
+
+const currentDateTime = moment().format('MM-DD-yyyy, HH:mm')
 
 export default {
   components: {
-    VueDatePicker
+    VueDatePicker,
+    VueSpinner
   },
   data() {
     return {
-      minDate: todayDate,
-      maxDate: todayDate,
-      todayDate: todayDate,
-      minDateAux: todayDate,
+      title: null,
+      roomId: null,
+      roomOptions: [],
+      todayDate: currentDateTime,
+      startDateTime: currentDateTime,
+      endDateTime: currentDateTime,
+      minDateAux: currentDateTime,
       timezone: 'America/Sao_Paulo',
-      format: 'dd/MM/yyyy HH:mm'
+      format: 'dd/MM/yyyy HH:mm',
+      errorMessage: null,
+      loading: true
+    }
+  },
+  async created() {
+    try {
+      const authStore = useAuthStore()
+      const token = authStore.getToken().value
+
+      const response = await axiosInstance.get('/v1/rooms', {
+        headers: {
+          Authorization: token
+        }
+      })
+
+      if (response.data) {
+        this.roomOptions = response.data.data
+      }
+    } catch (error) {
+      this.errorMessage =
+        'Erro ao carregar as opções de salas. Por favor, tente novamente mais tarde.'
+      console.error(error)
+    } finally {
+      this.loading = false
     }
   },
   watch: {
-    minDate(newInitialDate, oldInitialDate) {
+    startDateTime(newInitialDate, oldInitialDate) {
+      if (newInitialDate == null) {
+        this.startDateTime = currentDateTime
+        this.endDateTime = currentDateTime
+      }
+
       const newValue = moment(newInitialDate).format('MM-DD-yyyy, HH:mm')
-      if (newValue > oldInitialDate) {
-        this.maxDate = newValue
+      const oldInitialDateFormatted = moment(oldInitialDate).format('MM-DD-yyyy, HH:mm')
+
+      if (newValue > oldInitialDateFormatted) {
+        this.endDateTime = newValue
       }
       this.minDateAux = newValue
+    }
+  },
+  methods: {
+    async submit() {
+      this.errorMessage = null
+
+      if (
+        !this.title ||
+        !this.roomId ||
+        !this.startDateTime ||
+        !this.endDateTime ||
+        !this.description
+      ) {
+        this.errorMessage = 'Todos os campos são obrigatórios.'
+        return
+      }
+
+      const authStore = useAuthStore()
+      const token = authStore.getToken().value
+
+      const body = {
+        title: this.title,
+        roomId: this.roomId,
+        startDateTime: this.startDateTime,
+        endDateTime: this.endDateTime,
+        description: this.description
+      }
+
+      try {
+        await axiosInstance.post('/v1/reservations', body, {
+          headers: {
+            Authorization: token
+          }
+        })
+
+        this.$router.push({ name: 'calendar' })
+      } catch (error) {
+        this.errorMessage = 'Erro ao reservar a sala. Por favor, tente novamente.'
+        console.error(error)
+      }
     }
   }
 }
 </script>
+
+<style scoped>
+.form-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  position: relative;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  flex-basis: calc(50% - 16px);
+}
+
+.overlay {
+  position: absolute; /* Faz a sobreposição ocupar toda a tela */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Garante que a sobreposição fique acima de outros elementos */
+}
+
+button {
+  align-self: auto;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.error-message {
+  color: red;
+  margin-top: 16px;
+}
+</style>

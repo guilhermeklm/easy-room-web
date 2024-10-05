@@ -9,12 +9,11 @@
         <ul class="menu-list">
           <li><a href="#" @click.prevent="showComponent('reservationCalendar')">Calendário</a></li>
           <li><a href="#" @click.prevent="showComponent('reserveRoom')">Reservar Sala</a></li>
-          <li>
-            <a href="#" @click.prevent="showComponent('reservationsHistory')"
-              >Histórico de Reservas</a
-            >
-          </li>
+          <li><a href="#" @click.prevent="showComponent('reservationsHistory')">Histórico de Reservas</a></li>
         </ul>
+      </div>
+      <div class="logout-container">
+        <a href="#" @click.prevent="logout" class="logout-button">Logout</a>
       </div>
     </div>
     <div class="main-content">
@@ -49,11 +48,16 @@ export default {
         this.currentComponent = ReserveRoomComponent;
       } else if (component === 'reservationsHistory') {
         this.currentComponent = ReservationsHistoryComponent;
-      } else if(component === 'reservationCalendar') {
+      } else if (component === 'reservationCalendar') {
         this.currentComponent = ReservationCalendar;
       } else {
         this.currentComponent = null;
       }
+    },
+    logout() {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      this.$router.push('/login');
     }
   }
 }
@@ -120,6 +124,27 @@ export default {
 }
 
 .menu-list a:hover {
+  background-color: #2c3e50;
+  color: #ffffff;
+}
+
+.logout-container {
+  margin-top: auto;
+  text-align: center;
+  padding: 10px 0;
+}
+
+.logout-button {
+  text-decoration: none;
+  font-size: 1.2rem;
+  color: #2c3e50;
+  padding: 10px 15px;
+  display: inline-block;
+  border-radius: 5px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.logout-button:hover {
   background-color: #2c3e50;
   color: #ffffff;
 }

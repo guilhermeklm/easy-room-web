@@ -5,6 +5,7 @@ import { createPinia } from 'pinia'
 import "qalendar/dist/style.css";
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css'
+import { VueSpinner } from 'vue3-spinners'
 import moment from 'moment-timezone'
 moment.tz.setDefault('America/Sao_Paulo')
 
@@ -13,6 +14,7 @@ const app = createApp(App)
 
 app.use(pinia)
 app.use(router)
+app.component(VueSpinner)
 app.component(VueDatePicker)
 
 app.mount('#app')
