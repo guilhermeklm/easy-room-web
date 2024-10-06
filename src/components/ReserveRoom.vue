@@ -1,6 +1,26 @@
 <template>
   <h2>Reservar Sala</h2>
 
+  <!-- <PVButton label="Show" @click="showDialog" /> -->
+
+  <PVDialog
+    v-model:visible="visible"
+    :showHeader="false"
+    class="responsive-dialog"
+    :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
+  >
+    <div class="dialog-content">
+      <p class="dialog-message">
+        <i class="pi pi-check"> Reserva criada com sucesso! </i>
+      </p>
+      <PVButton
+        icon="pi pi-times"
+        class="p-button-rounded p-button-text close-button"
+        @click="visible = false"
+      />
+    </div>
+  </PVDialog>
+
   <div class="form-container">
     <div class="overlay" v-if="loading">
       <VueSpinner size="50" color="black" />
@@ -48,7 +68,7 @@
       <input id="description" v-model="description" type="text" maxlength="300" />
     </div>
 
-    <button @click="submit">Reservar</button>
+    <PVButton @click="submit"> Reservar </PVButton>
 
     <div v-if="errorMessage" class="error-message">
       {{ errorMessage }}
@@ -62,16 +82,21 @@ import moment from 'moment'
 import axiosInstance from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
 import { VueSpinner } from 'vue3-spinners'
+import PVDialog from 'primevue/dialog'
+import PVButton from 'primevue/button'
 
 const currentDateTime = moment().format('MM-DD-yyyy, HH:mm')
 
 export default {
   components: {
     VueDatePicker,
-    VueSpinner
+    VueSpinner,
+    PVDialog,
+    PVButton
   },
   data() {
     return {
+      visible: false,
       title: null,
       roomId: null,
       roomOptions: [],
@@ -124,6 +149,13 @@ export default {
     }
   },
   methods: {
+    showDialog() {
+      this.visible = true
+
+      setTimeout(() => {
+        this.visible = false
+      }, 5000)
+    },
     async submit() {
       this.errorMessage = null
 
@@ -140,12 +172,14 @@ export default {
 
       const authStore = useAuthStore()
       const token = authStore.getToken().value
+      const startDateTimeFormatted = moment(this.startDateTime).format('MM-DD-yyyy, HH:mm')
+      const endDateTimeFormatted = moment(this.endDateTime).format('MM-DD-yyyy, HH:mm')
 
       const body = {
         title: this.title,
         roomId: this.roomId,
-        startDateTime: this.startDateTime,
-        endDateTime: this.endDateTime,
+        startDateTime: startDateTimeFormatted,
+        endDateTime: endDateTimeFormatted,
         description: this.description
       }
 
@@ -156,7 +190,7 @@ export default {
           }
         })
 
-        this.$router.push({ name: 'calendar' })
+        this.showDialog()
       } catch (error) {
         this.errorMessage = 'Erro ao reservar a sala. Por favor, tente novamente.'
         console.error(error)
@@ -210,5 +244,25 @@ button:hover {
 .error-message {
   color: red;
   margin-top: 16px;
+}
+
+.responsive-dialog {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 1rem;
+}
+
+.dialog-message {
+  font-size: calc(1rem + 0.5vw);
 }
 </style>

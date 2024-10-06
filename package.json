@@ -11,12 +11,15 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@primevue/themes": "^4.0.7",
     "@vuepic/vue-datepicker": "^9.0.3",
     "axios": "^1.7.6",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "moment-timezone": "^0.5.45",
     "pinia": "^2.2.2",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.0.7",
     "qalendar": "^3.8.1",
     "vue": "^3.4.29",
     "vue-router": "^4.3.3",
