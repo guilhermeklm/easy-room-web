@@ -1,8 +1,6 @@
 <template>
   <h2>Reservar Sala</h2>
 
-  <!-- <PVButton label="Show" @click="showDialog" /> -->
-
   <PVDialog
     v-model:visible="visible"
     :showHeader="false"
@@ -150,6 +148,7 @@ export default {
   },
   methods: {
     showDialog() {
+      this.loading = false
       this.visible = true
 
       setTimeout(() => {
@@ -158,6 +157,7 @@ export default {
     },
     async submit() {
       this.errorMessage = null
+      this.loading = true
 
       if (
         !this.title ||
@@ -192,8 +192,9 @@ export default {
 
         this.showDialog()
       } catch (error) {
-        this.errorMessage = 'Erro ao reservar a sala. Por favor, tente novamente.'
-        console.error(error)
+        const response = error.response
+        this.loading = false
+        this.errorMessage = response.data.message
       }
     }
   }
