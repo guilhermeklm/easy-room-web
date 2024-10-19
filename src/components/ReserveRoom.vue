@@ -26,17 +26,18 @@
 
     <div class="form-group">
       <label for="title">Título</label>
-      <input id="title" v-model="title" type="text" />
+      <InputText id="title" v-model="title" />
     </div>
 
     <div class="form-group">
       <label for="room">Sala</label>
-      <select id="room" v-model="roomId">
-        <option disabled value="">Selecione uma sala</option>
-        <option v-for="room in roomOptions" :key="room._roomId" :value="room._roomId">
-          {{ room._name }}
-        </option>
-      </select>
+      <PVSelect
+        v-model="roomId"
+        :options="roomOptions"
+        optionLabel="_name"
+        placeholder="Selecione a sala"
+        class="w-full md:w-56"
+      />
     </div>
 
     <div class="form-group">
@@ -61,12 +62,12 @@
       />
     </div>
 
-    <div class="form-group">
+    <div class="form-group full-width">
       <label for="description">Descrição</label>
-      <input id="description" v-model="description" type="text" maxlength="300" />
+      <PVTextarea v-model="description" rows="5" cols="30" />
     </div>
 
-    <PVButton @click="submit"> Reservar </PVButton>
+    <PVButton @click="submit">Reservar</PVButton>
 
     <div v-if="errorMessage" class="error-message">
       {{ errorMessage }}
@@ -82,6 +83,9 @@ import { useAuthStore } from '@/stores/auth'
 import { VueSpinner } from 'vue3-spinners'
 import PVDialog from 'primevue/dialog'
 import PVButton from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import PVTextarea from 'primevue/textarea'
+import PVSelect from 'primevue/select'
 
 const currentDateTime = moment().format('MM-DD-yyyy, HH:mm')
 
@@ -90,7 +94,10 @@ export default {
     VueDatePicker,
     VueSpinner,
     PVDialog,
-    PVButton
+    PVButton,
+    InputText,
+    PVTextarea,
+    PVSelect
   },
   data() {
     return {
@@ -216,7 +223,12 @@ export default {
 .form-group {
   display: flex;
   flex-direction: column;
-  flex-basis: calc(50% - 16px);
+  flex: 1 1 45%; /* Ajusta para que ocupe 45% da largura disponível */
+  min-width: 300px; /* Largura mínima para cada grupo de formulário */
+}
+
+.full-width {
+  flex: 1 1 100%; /* Para o campo de descrição, ocupa 100% da largura */
 }
 
 .overlay {
@@ -230,20 +242,6 @@ export default {
   justify-content: center;
   align-items: center;
   z-index: 1000; /* Garante que a sobreposição fique acima de outros elementos */
-}
-
-button {
-  align-self: auto;
-  padding: 8px 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #0056b3;
 }
 
 .error-message {

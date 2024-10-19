@@ -8,6 +8,9 @@ import { VueSpinner } from 'vue3-spinners'
 import PrimeVue from 'primevue/config';
 import Dialog from 'primevue/dialog'
 import Button from "primevue/button"
+import InputText from 'primevue/inputtext'
+import Textarea from 'primevue/textarea';
+import Select from 'primevue/select';
 import Aura from '@primevue/themes/aura';
 import 'primeicons/primeicons.css'
 import moment from 'moment-timezone'
@@ -29,6 +32,9 @@ app.use(PrimeVue, {
 });
 app.component(Dialog, 'PVDialog')
 app.component(Button, 'PVButton')
+app.component(Textarea, 'PVTextarea')
+app.component(Select, 'PVSelect')
+app.component(InputText)
 app.component(VueSpinner)
 app.component(VueDatePicker)
 

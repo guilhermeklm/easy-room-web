@@ -1,6 +1,6 @@
 <template>
   <h2>Historico de reservas</h2>
-  <DataTable :value="reservations" tableStyle="min-width: 30px">
+  <DataTable :loading="loading" :value="reservations" tableStyle="min-width: 30px">
     <Column field="title" header="Titulo"></Column>
     <Column field="description" header="Descricao"></Column>
     <Column field="startDateTime" header="Data hora inicio"></Column>
@@ -19,7 +19,8 @@ export default {
   components: { DataTable, Column },
   data() {
     return {
-      reservations: []
+      reservations: [],
+      loading: true,
     }
   },
   async created() {
@@ -33,11 +34,8 @@ export default {
         }
       })
 
-
       if (response.data) {
-        console.log(response.data)
         this.reservations = response.data
-        console.log(this.reservations)
       }
     } catch (error) {
       this.errorMessage =

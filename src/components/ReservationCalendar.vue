@@ -1,5 +1,5 @@
 <template>
-  <div class="is-light-mode">
+  <div class="is-light-mode calendar-wrapper">
     <Qalendar :events="events" :config="config" :is-loading='loading' />
   </div>
 </template>
@@ -43,7 +43,6 @@ export default {
 
       if (response.data) {
         let events = []
-        console.log(response.data)
         for (const reservation of response.data) {
           events.push({
             id: reservation.id,
@@ -70,3 +69,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.calendar-wrapper {
+  max-width: 100%;
+  height: 90vh;
+  padding: 0 10px;
+  overflow: auto;
+}
+</style>
