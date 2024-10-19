@@ -1,45 +1,72 @@
 <template>
-    <Qalendar 
-      :events="events"
-      :config="config"
-    />
+  <div class="is-light-mode">
+    <Qalendar :events="events" :config="config" :is-loading='loading' />
+  </div>
 </template>
 
 <script>
-import { Qalendar } from "qalendar";
+import { Qalendar } from 'qalendar'
+import axiosInstance from '@/services/http'
+import { useAuthStore } from '@/stores/auth'
 
 export default {
-    components: {
-        Qalendar,
-    },
+  components: {
+    Qalendar
+  },
+  data() {
+    return {
+      reservations: [],
+      events: [],
+      loading: true,
+      config: {
+        week: {
+          startsOn: 'monday',
+          nDays: 7,
+          scrollToHour: 5
+        },
+        defaultMode: 'week',
+        showCurrentTime: true,
+        locale: 'pt-BR'
+      }
+    }
+  },
+  async created() {
+    try {
+      const authStore = useAuthStore()
+      const token = authStore.getToken().value
 
-    data() {
-        return {
-            events: [
-                // ...
-                {
-                  title: "Advanced algebra",
-                  with: "Chandler Bing",
-                  time: { start: "2024-10-01 12:05", end: "2024-10-01 13:35" },
-                  color: "yellow",
-                  isEditable: true,
-                  id: "753944708f0f",
-                  description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Asperiores assumenda corporis doloremque et expedita molestias necessitatibus quam quas temporibus veritatis. Deserunt excepturi illum nobis perferendis praesentium repudiandae saepe sapiente voluptatem!"
-                },
-                {
-                  title: "Ralph on holiday",
-                  with: "Rachel Greene",
-                  time: { start: "2022-05-10", end: "2022-05-22" },
-                  color: "green",
-                  isEditable: true,
-                  id: "5602b6f589fc"
-                }
-                // ...
-            ],
-            config: {
-              // see configuration section
-            }
+      const response = await axiosInstance.get('/v1/reservations', {
+        headers: {
+          Authorization: token
         }
-    },
+      })
+
+      if (response.data) {
+        let events = []
+        console.log(response.data)
+        for (const reservation of response.data) {
+          events.push({
+            id: reservation.id,
+            title: reservation.title,
+            description: reservation.description,
+            location: reservation.roomName + " - " + reservation.locationAddress,
+            color: "blue",
+            isEditable: false,
+            time: {
+              start: reservation.startDateTime,
+              end: reservation.endDateTime
+            }
+          })
+        }
+        this.events = events
+      }
+    } catch (error) {
+      this.errorMessage =
+        'Erro ao carregar as opções de salas. Por favor, tente novamente mais tarde.'
+      console.error(error)
+    } finally {
+      this.loading = false
+    }
+  }
 }
 </script>

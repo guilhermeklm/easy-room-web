@@ -2,7 +2,6 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
-import "qalendar/dist/style.css";
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css'
 import { VueSpinner } from 'vue3-spinners'
@@ -12,6 +11,7 @@ import Button from "primevue/button"
 import Aura from '@primevue/themes/aura';
 import 'primeicons/primeicons.css'
 import moment from 'moment-timezone'
+import 'qalendar/dist/style.css';
 moment.tz.setDefault('America/Sao_Paulo')
 
 const pinia = createPinia()

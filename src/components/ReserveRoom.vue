@@ -167,8 +167,12 @@ export default {
         !this.description
       ) {
         this.errorMessage = 'Todos os campos são obrigatórios.'
+        this.loading = false
         return
       }
+
+      console.log(this.startDateTime)
+      console.log(this.endDateTime)
 
       const authStore = useAuthStore()
       const token = authStore.getToken().value
