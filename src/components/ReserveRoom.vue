@@ -32,7 +32,7 @@
     <div class="form-group">
       <label for="room">Sala</label>
       <PVSelect
-        v-model="roomId"
+        v-model="roomSelected"
         :options="roomOptions"
         optionLabel="_name"
         placeholder="Selecione a sala"
@@ -73,6 +73,10 @@
       {{ errorMessage }}
     </div>
   </div>
+
+  <div class="is-light-mode calendar-wrapper">
+    <Qalendar :events="events" :config="config" :is-loading="loading" />
+  </div>
 </template>
 
 <script>
@@ -86,6 +90,7 @@ import PVButton from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import PVTextarea from 'primevue/textarea'
 import PVSelect from 'primevue/select'
+import { Qalendar } from 'qalendar'
 
 const currentDateTime = moment().format('MM-DD-yyyy, HH:mm')
 
@@ -97,13 +102,14 @@ export default {
     PVButton,
     InputText,
     PVTextarea,
-    PVSelect
+    PVSelect,
+    Qalendar
   },
   data() {
     return {
       visible: false,
       title: null,
-      roomId: null,
+      roomSelected: null,
       roomOptions: [],
       todayDate: currentDateTime,
       startDateTime: currentDateTime,
@@ -112,10 +118,54 @@ export default {
       timezone: 'America/Sao_Paulo',
       format: 'dd/MM/yyyy HH:mm',
       errorMessage: null,
-      loading: true
+      loading: true,
+      reservations: [],
+      events: [],
+      config: {
+        disableModes: ['day','week'],
+        defaultMode: 'month',
+        showCurrentTime: true,
+        locale: 'pt-BR'
+      }
     }
   },
   async created() {
+    try {
+      const authStore = useAuthStore()
+      const token = authStore.getToken().value
+
+      const response = await axiosInstance.get('/v1/reservations', {
+        headers: {
+          Authorization: token
+        }
+      })
+
+      if (response.data) {
+        let events = []
+        for (const reservation of response.data) {
+          events.push({
+            id: reservation.id,
+            title: reservation.title,
+            description: reservation.description,
+            location: reservation.roomName + ' - ' + reservation.locationAddress,
+            color: 'blue',
+            isEditable: false,
+            time: {
+              start: reservation.startDateTime,
+              end: reservation.endDateTime
+            }
+          })
+        }
+        this.events = events
+      }
+    } catch (error) {
+      this.errorMessage =
+        'Erro ao carregar as opções de salas. Por favor, tente novamente mais tarde.'
+      console.error(error)
+    } finally {
+      this.loading = false
+    }
+
     try {
       const authStore = useAuthStore()
       const token = authStore.getToken().value
@@ -168,7 +218,7 @@ export default {
 
       if (
         !this.title ||
-        !this.roomId ||
+        !this.roomSelected ||
         !this.startDateTime ||
         !this.endDateTime ||
         !this.description
@@ -178,9 +228,6 @@ export default {
         return
       }
 
-      console.log(this.startDateTime)
-      console.log(this.endDateTime)
-
       const authStore = useAuthStore()
       const token = authStore.getToken().value
       const startDateTimeFormatted = moment(this.startDateTime).format('MM-DD-yyyy, HH:mm')
@@ -188,7 +235,7 @@ export default {
 
       const body = {
         title: this.title,
-        roomId: this.roomId,
+        roomId: this.roomSelected._roomId,
         startDateTime: startDateTimeFormatted,
         endDateTime: endDateTimeFormatted,
         description: this.description
@@ -266,6 +313,13 @@ export default {
 }
 
 .dialog-message {
-  font-size: calc(1rem + 0.5vw);
+  font-size: calc(1r20 + 0.5vw);
+}
+
+.calendar-wrapper {
+  padding: 20px 10px;
+  max-width: 100%;
+  height: 70vh;
+  overflow: auto;
 }
 </style>

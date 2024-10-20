@@ -32,7 +32,6 @@ router.beforeEach(async (to, from, next) => {
     const auth = useAuthStore()
 
     if (auth.token && auth.user) {
-      console.log("tem token e user")
       const isAuthenticated = await auth.isTokenValid()
 
       if (isAuthenticated) {
