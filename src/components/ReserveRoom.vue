@@ -122,7 +122,7 @@ export default {
       reservations: [],
       events: [],
       config: {
-        disableModes: ['day','week'],
+        disableModes: ['day', 'week'],
         defaultMode: 'month',
         showCurrentTime: true,
         locale: 'pt-BR'
@@ -130,41 +130,7 @@ export default {
     }
   },
   async created() {
-    try {
-      const authStore = useAuthStore()
-      const token = authStore.getToken().value
-
-      const response = await axiosInstance.get('/v1/reservations', {
-        headers: {
-          Authorization: token
-        }
-      })
-
-      if (response.data) {
-        let events = []
-        for (const reservation of response.data) {
-          events.push({
-            id: reservation.id,
-            title: reservation.title,
-            description: reservation.description,
-            location: reservation.roomName + ' - ' + reservation.locationAddress,
-            color: 'blue',
-            isEditable: false,
-            time: {
-              start: reservation.startDateTime,
-              end: reservation.endDateTime
-            }
-          })
-        }
-        this.events = events
-      }
-    } catch (error) {
-      this.errorMessage =
-        'Erro ao carregar as opções de salas. Por favor, tente novamente mais tarde.'
-      console.error(error)
-    } finally {
-      this.loading = false
-    }
+    await this.loadReservations()
 
     try {
       const authStore = useAuthStore()
@@ -204,6 +170,43 @@ export default {
     }
   },
   methods: {
+    async loadReservations() {
+      try {
+        const authStore = useAuthStore()
+        const token = authStore.getToken().value
+
+        const response = await axiosInstance.get('/v1/reservations', {
+          headers: {
+            Authorization: token
+          }
+        })
+
+        if (response.data) {
+          let events = []
+          for (const reservation of response.data) {
+            events.push({
+              id: reservation.id,
+              title: reservation.title,
+              description: reservation.description,
+              location: reservation.roomName + ' - ' + reservation.locationAddress,
+              color: 'blue',
+              isEditable: false,
+              time: {
+                start: reservation.startDateTime,
+                end: reservation.endDateTime
+              }
+            })
+          }
+          this.events = events
+        }
+      } catch (error) {
+        this.errorMessage =
+          'Erro ao carregar as opções de salas. Por favor, tente novamente mais tarde.'
+        console.error(error)
+      } finally {
+        this.loading = false
+      }
+    },
     showDialog() {
       this.loading = false
       this.visible = true
@@ -249,6 +252,7 @@ export default {
         })
 
         this.showDialog()
+        await this.loadReservations()
       } catch (error) {
         const response = error.response
         this.loading = false
