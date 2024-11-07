@@ -67,6 +67,37 @@
       <PVTextarea v-model="description" rows="5" cols="30" />
     </div>
 
+    <div class="form-group">
+      <PVButton label="Ativar/Desativar Recorrência" @click="toggleRecurrence" />
+    </div>
+
+    <div v-if="isRecurring" class="recurrence-config">
+      <div class="form-group">
+        <label for="recurrenceEndDate">Data de Término da Recorrência</label>
+        <VueDatePicker
+          id="recurrenceEndDate"
+          v-model="recurrenceConfiguration.endDate"
+          :format="format"
+          :min-date="todayDate"
+          :timezone="timezone"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Dias da Semana</label>
+        <div class="weekdays-selector">
+          <label v-for="(day, index) in weekdays" :key="index">
+            <input
+              type="checkbox"
+              :value="day.value"
+              v-model="recurrenceConfiguration.selectedWeekdays"
+            />
+            {{ day.label }}
+          </label>
+        </div>
+      </div>
+    </div>
+
     <PVButton @click="submit">Reservar</PVButton>
 
     <div v-if="errorMessage" class="error-message">
@@ -121,6 +152,20 @@ export default {
       loading: true,
       reservations: [],
       events: [],
+      isRecurring: false,
+      recurrenceConfiguration: {
+        endDate: null,
+        selectedWeekdays: []
+      },
+      weekdays: [
+        { label: 'Domingo', value: 0 },
+        { label: 'Segunda', value: 1 },
+        { label: 'Terça', value: 2 },
+        { label: 'Quarta', value: 3 },
+        { label: 'Quinta', value: 4 },
+        { label: 'Sexta', value: 5 },
+        { label: 'Sábado', value: 6 }
+      ],
       config: {
         disableModes: ['day', 'week'],
         defaultMode: 'month',
@@ -170,6 +215,13 @@ export default {
     }
   },
   methods: {
+    toggleRecurrence() {
+      this.isRecurring = !this.isRecurring
+      if (!this.isRecurring) {
+        this.recurrenceConfiguration.endDate = null
+        this.recurrenceConfiguration.selectedWeekdays = []
+      }
+    },
     async loadReservations() {
       try {
         const authStore = useAuthStore()
@@ -231,6 +283,14 @@ export default {
         return
       }
 
+      if (this.isRecurring) {
+        if (!this.recurrenceConfiguration.endDate) {
+          this.errorMessage = 'Data final da recorrencia é obrigatoria'
+          this.loading = false
+          return
+        }
+      }
+
       const authStore = useAuthStore()
       const token = authStore.getToken().value
       const startDateTimeFormatted = moment(this.startDateTime).format('MM-DD-yyyy, HH:mm')
@@ -241,7 +301,9 @@ export default {
         roomId: this.roomSelected._roomId,
         startDateTime: startDateTimeFormatted,
         endDateTime: endDateTimeFormatted,
-        description: this.description
+        description: this.description,
+        isRecurring: this.isRecurring,
+        recurrence: { ...this.recurrenceConfiguration }
       }
 
       try {
@@ -325,5 +387,24 @@ export default {
   max-width: 100%;
   height: 70vh;
   overflow: auto;
+}
+
+.recurrence-config {
+  margin-top: 16px;
+}
+
+.weekdays-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.weekdays-selector label {
+  display: flex;
+  align-items: center;
+}
+
+.weekdays-selector input {
+  margin-right: 4px;
 }
 </style>

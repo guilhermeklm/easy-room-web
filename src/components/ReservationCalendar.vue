@@ -1,6 +1,12 @@
 <template>
   <div class="is-light-mode calendar-wrapper">
-    <Qalendar :events="events" :config="config" :is-loading='loading' />
+    <Qalendar
+      :events="events"
+      :config="config"
+      :is-loading="loading"
+      @edit-event="handleEditEvent"
+      @delete-event="handleDeleteEvent"
+    />
   </div>
 </template>
 
@@ -31,40 +37,51 @@ export default {
     }
   },
   async created() {
-    try {
-      const authStore = useAuthStore()
-      const token = authStore.getToken().value
+    await this.loadEvents()
+  },
+  methods: {
+    async loadEvents() {
+      try {
+        const authStore = useAuthStore()
+        const token = authStore.getToken().value
 
-      const response = await axiosInstance.get('/v1/reservations', {
-        headers: {
-          Authorization: token
-        }
-      })
+        const response = await axiosInstance.get('/v1/reservations', {
+          headers: {
+            Authorization: token
+          }
+        })
 
-      if (response.data) {
-        let events = []
-        for (const reservation of response.data) {
-          events.push({
+        if (response.data) {
+          this.events = response.data.map((reservation) => ({
             id: reservation.id,
             title: reservation.title,
             description: reservation.description,
-            location: reservation.roomName + " - " + reservation.locationAddress,
-            color: "blue",
-            isEditable: false,
+            location: `${reservation.roomName} - ${reservation.locationAddress}`,
+            color: 'blue',
+            isEditable: true,
             time: {
               start: reservation.startDateTime,
               end: reservation.endDateTime
             }
-          })
+          }))
         }
-        this.events = events
+      } catch (error) {
+        console.error(error)
+        this.errorMessage =
+          'Erro ao carregar as opções de salas. Por favor, tente novamente mais tarde.'
+      } finally {
+        this.loading = false
       }
-    } catch (error) {
-      this.errorMessage =
-        'Erro ao carregar as opções de salas. Por favor, tente novamente mais tarde.'
-      console.error(error)
-    } finally {
-      this.loading = false
+    },
+    async handleEditEvent(event) {
+      console.log('Editando evento:', event)
+    },
+    async handleDeleteEvent(event) {
+      try {
+        console.log('Deletando evento:', event)
+      } catch (error) {
+        console.log(error)
+      }
     }
   }
 }
