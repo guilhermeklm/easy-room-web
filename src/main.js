@@ -12,9 +12,13 @@ import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea';
 import Select from 'primevue/select';
 import Aura from '@primevue/themes/aura';
+import ConfirmationService from 'primevue/confirmationservice';
+import ConfirmDialog from 'primevue/confirmdialog';
 import 'primeicons/primeicons.css'
 import moment from 'moment-timezone'
 import 'qalendar/dist/style.css';
+import Toast from 'primevue/toast';
+import ToastService from 'primevue/toastservice';
 moment.tz.setDefault('America/Sao_Paulo')
 
 const pinia = createPinia()
@@ -22,6 +26,8 @@ const app = createApp(App)
 
 app.use(pinia)
 app.use(router)
+app.use(ConfirmationService);
+app.use(ToastService)
 app.use(PrimeVue, {
   theme: {
     preset: Aura,
@@ -34,6 +40,8 @@ app.component(Dialog, 'PVDialog')
 app.component(Button, 'PVButton')
 app.component(Textarea, 'PVTextarea')
 app.component(Select, 'PVSelect')
+app.component(ConfirmDialog, 'PVConfirmDialog')
+app.component(Toast, 'PVToast')
 app.component(InputText)
 app.component(VueSpinner)
 app.component(VueDatePicker)

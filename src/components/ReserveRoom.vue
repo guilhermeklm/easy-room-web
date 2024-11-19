@@ -1,6 +1,4 @@
 <template>
-  <h2>Reservar Sala</h2>
-
   <PVDialog
     v-model:visible="visible"
     :showHeader="false"
@@ -19,156 +17,63 @@
     </div>
   </PVDialog>
 
-  <div class="form-container">
-    <div class="overlay" v-if="loading">
-      <VueSpinner size="50" color="black" />
-    </div>
-
-    <div class="form-group">
-      <label for="title">Título</label>
-      <InputText id="title" v-model="title" />
-    </div>
-
-    <div class="form-group">
-      <label for="room">Sala</label>
-      <PVSelect
-        v-model="roomSelected"
-        :options="roomOptions"
-        optionLabel="_name"
-        placeholder="Selecione a sala"
-        class="w-full md:w-56"
-      />
-    </div>
-
-    <div class="form-group">
-      <label for="start">Data e hora Início</label>
-      <VueDatePicker
-        id="start"
-        v-model="startDateTime"
-        :format="format"
-        :min-date="todayDate"
-        :timezone="timezone"
-      />
-    </div>
-
-    <div class="form-group">
-      <label for="end">Data e hora Fim</label>
-      <VueDatePicker
-        id="end"
-        v-model="endDateTime"
-        :format="format"
-        :min-date="minDateAux"
-        :timezone="timezone"
-      />
-    </div>
-
-    <div class="form-group full-width">
-      <label for="description">Descrição</label>
-      <PVTextarea v-model="description" rows="5" cols="30" />
-    </div>
-
-    <div class="form-group">
-      <PVButton label="Ativar/Desativar Recorrência" @click="toggleRecurrence" />
-    </div>
-
-    <div v-if="isRecurring" class="recurrence-config">
-      <div class="form-group">
-        <label for="recurrenceEndDate">Data de Término da Recorrência</label>
-        <VueDatePicker
-          id="recurrenceEndDate"
-          v-model="recurrenceConfiguration.endDate"
-          :format="format"
-          :min-date="todayDate"
-          :timezone="timezone"
-        />
-      </div>
-
-      <div class="form-group">
-        <label>Dias da Semana</label>
-        <div class="weekdays-selector">
-          <label v-for="(day, index) in weekdays" :key="index">
-            <input
-              type="checkbox"
-              :value="day.value"
-              v-model="recurrenceConfiguration.selectedWeekdays"
-            />
-            {{ day.label }}
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <PVButton @click="submit">Reservar</PVButton>
-
-    <div v-if="errorMessage" class="error-message">
-      {{ errorMessage }}
-    </div>
-  </div>
+  <PVButton label="Reservar sala" @click="showForm = true" />
+  <ReservationForm
+    :visible="showForm"
+    :reservation="selectedReservation"
+    :isEdit="isEdit"
+    @update:visible="showForm = $event"
+    @save="handleSave"
+    @opened="handleDialogOpened"
+    @closed="handleDialogClosed"
+  />
 
   <div class="is-light-mode calendar-wrapper">
-    <Qalendar :events="events" :config="config" :is-loading="loading" />
+    <Qalendar
+      :events="reservations"
+      :config="config"
+      :is-loading="loading"
+      @delete-event="onDeleteEvent"
+      @edit-event="onEditEvent"
+    />
+
+    <PVToast />
+    <PVConfirmDialog></PVConfirmDialog>
   </div>
 </template>
 
 <script>
-import VueDatePicker from '@vuepic/vue-datepicker'
-import moment from 'moment'
 import axiosInstance from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
-import { VueSpinner } from 'vue3-spinners'
 import PVDialog from 'primevue/dialog'
 import PVButton from 'primevue/button'
-import InputText from 'primevue/inputtext'
-import PVTextarea from 'primevue/textarea'
-import PVSelect from 'primevue/select'
 import { Qalendar } from 'qalendar'
-
-const currentDateTime = moment().format('MM-DD-yyyy, HH:mm')
+import PVConfirmDialog from 'primevue/confirmdialog'
+import PVToast from 'primevue/toast'
+import ReservationForm from './ReservationForm.vue'
 
 export default {
   components: {
-    VueDatePicker,
-    VueSpinner,
     PVDialog,
     PVButton,
-    InputText,
-    PVTextarea,
-    PVSelect,
-    Qalendar
+    Qalendar,
+    PVConfirmDialog,
+    PVToast,
+    ReservationForm
   },
   data() {
     return {
       visible: false,
-      title: null,
-      roomSelected: null,
-      roomOptions: [],
-      todayDate: currentDateTime,
-      startDateTime: currentDateTime,
-      endDateTime: currentDateTime,
-      minDateAux: currentDateTime,
-      timezone: 'America/Sao_Paulo',
-      format: 'dd/MM/yyyy HH:mm',
       errorMessage: null,
       loading: true,
       reservations: [],
-      events: [],
-      isRecurring: false,
-      recurrenceConfiguration: {
-        endDate: null,
-        selectedWeekdays: []
-      },
-      weekdays: [
-        { label: 'Domingo', value: 0 },
-        { label: 'Segunda', value: 1 },
-        { label: 'Terça', value: 2 },
-        { label: 'Quarta', value: 3 },
-        { label: 'Quinta', value: 4 },
-        { label: 'Sexta', value: 5 },
-        { label: 'Sábado', value: 6 }
-      ],
+      eventToDelete: null,
+      deleteDialogVisible: false,
+      selectedReservation: null,
+      showForm: false,
+      isEdit: false,
       config: {
-        disableModes: ['day', 'week'],
-        defaultMode: 'month',
+        defaultMode: 'week',
         showCurrentTime: true,
         locale: 'pt-BR'
       }
@@ -176,50 +81,79 @@ export default {
   },
   async created() {
     await this.loadReservations()
-
-    try {
-      const authStore = useAuthStore()
-      const token = authStore.getToken().value
-
-      const response = await axiosInstance.get('/v1/rooms', {
-        headers: {
-          Authorization: token
-        }
-      })
-
-      if (response.data) {
-        this.roomOptions = response.data.data
-      }
-    } catch (error) {
-      this.errorMessage =
-        'Erro ao carregar as opções de salas. Por favor, tente novamente mais tarde.'
-      console.error(error)
-    } finally {
-      this.loading = false
-    }
-  },
-  watch: {
-    startDateTime(newInitialDate, oldInitialDate) {
-      if (newInitialDate == null) {
-        this.startDateTime = currentDateTime
-        this.endDateTime = currentDateTime
-      }
-
-      const newValue = moment(newInitialDate).format('MM-DD-yyyy, HH:mm')
-      const oldInitialDateFormatted = moment(oldInitialDate).format('MM-DD-yyyy, HH:mm')
-
-      if (newValue > oldInitialDateFormatted) {
-        this.endDateTime = newValue
-      }
-      this.minDateAux = newValue
-    }
   },
   methods: {
-    toggleRecurrence() {
-      this.isRecurring = !this.isRecurring
-      if (!this.isRecurring) {
-        this.recurrenceConfiguration.endDate = null
-        this.recurrenceConfiguration.selectedWeekdays = []
+    onEditEvent(eventId) {
+      const reservation = this.reservations.find((reservation) => reservation.id === eventId)
+      if (reservation) {
+        this.selectedReservation = reservation
+        this.isEdit = true
+        this.showForm = true
+      }
+    },
+    handleSave(data) {
+      console.log('Reserva salva:', data)
+      this.showForm = false
+      this.selectedReservation = null
+      this.isEdit = false
+      this.loadReservations()
+    },
+    handleDialogOpened() {
+      console.log('O diálogo foi aberto!')
+    },
+    handleDialogClosed() {
+      this.showForm = false
+      this.selectedReservation = null
+      this.isEdit = false
+      console.log('O diálogo foi fechado!')
+    },
+    onDeleteEvent(eventId) {
+      this.eventIdToDelete = eventId
+      this.$confirm.require({
+        message: 'Deseja remover esta reserva?',
+        header: 'Confirmation',
+        icon: 'pi pi-exclamation-triangle',
+        rejectProps: {
+          label: 'Cancelar',
+          severity: 'secondary',
+          outlined: true
+        },
+        acceptProps: {
+          label: 'Deletar'
+        },
+        accept: () => {
+          this.confirmDelete()
+        }
+      })
+    },
+    async confirmDelete() {
+      if (!this.eventIdToDelete) return
+
+      this.loading = true
+
+      try {
+        const authStore = useAuthStore()
+        const token = authStore.getToken().value
+
+        await axiosInstance.delete(`/v1/reservations/${this.eventIdToDelete}`, {
+          headers: {
+            Authorization: token
+          }
+        })
+
+        this.deleteDialogVisible = false
+        this.eventIdToDelete = null
+        this.loading = false
+        this.$toast.add({
+          severity: 'info',
+          summary: 'Removido',
+          detail: 'A reserva foi removida',
+          life: 3000
+        })
+        this.loadReservations()
+      } catch (error) {
+        this.errorMessage = 'Erro ao excluir a reserva. Tente novamente.'
+        this.loading = false
       }
     },
     async loadReservations() {
@@ -234,22 +168,22 @@ export default {
         })
 
         if (response.data) {
-          let events = []
+          let reservations = []
           for (const reservation of response.data) {
-            events.push({
+            reservations.push({
               id: reservation.id,
               title: reservation.title,
               description: reservation.description,
               location: reservation.roomName + ' - ' + reservation.locationAddress,
               color: 'blue',
-              isEditable: false,
+              isEditable: true,
               time: {
                 start: reservation.startDateTime,
                 end: reservation.endDateTime
               }
             })
           }
-          this.events = events
+          this.reservations = reservations
         }
       } catch (error) {
         this.errorMessage =
@@ -257,68 +191,6 @@ export default {
         console.error(error)
       } finally {
         this.loading = false
-      }
-    },
-    showDialog() {
-      this.loading = false
-      this.visible = true
-
-      setTimeout(() => {
-        this.visible = false
-      }, 5000)
-    },
-    async submit() {
-      this.errorMessage = null
-      this.loading = true
-
-      if (
-        !this.title ||
-        !this.roomSelected ||
-        !this.startDateTime ||
-        !this.endDateTime ||
-        !this.description
-      ) {
-        this.errorMessage = 'Todos os campos são obrigatórios.'
-        this.loading = false
-        return
-      }
-
-      if (this.isRecurring) {
-        if (!this.recurrenceConfiguration.endDate) {
-          this.errorMessage = 'Data final da recorrencia é obrigatoria'
-          this.loading = false
-          return
-        }
-      }
-
-      const authStore = useAuthStore()
-      const token = authStore.getToken().value
-      const startDateTimeFormatted = moment(this.startDateTime).format('MM-DD-yyyy, HH:mm')
-      const endDateTimeFormatted = moment(this.endDateTime).format('MM-DD-yyyy, HH:mm')
-
-      const body = {
-        title: this.title,
-        roomId: this.roomSelected._roomId,
-        startDateTime: startDateTimeFormatted,
-        endDateTime: endDateTimeFormatted,
-        description: this.description,
-        isRecurring: this.isRecurring,
-        recurrence: { ...this.recurrenceConfiguration }
-      }
-
-      try {
-        await axiosInstance.post('/v1/reservations', body, {
-          headers: {
-            Authorization: token
-          }
-        })
-
-        this.showDialog()
-        await this.loadReservations()
-      } catch (error) {
-        const response = error.response
-        this.loading = false
-        this.errorMessage = response.data.message
       }
     }
   }
@@ -406,5 +278,26 @@ export default {
 
 .weekdays-selector input {
   margin-right: 4px;
+}
+
+/* Estilo para a sobreposição de exclusão */
+.delete-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5); /* Fundo semi-transparente */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Assegura que o spinner fique sobre outros conteúdos */
+}
+
+/* Estilo do spinner de exclusão */
+.delete-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
