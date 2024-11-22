@@ -9,7 +9,7 @@
     <div class="form-container">
       <div class="form-group">
         <label for="title">Título</label>
-        <InputText id="title" v-model="title" />
+        <InputText :disabled="loading" id="title" v-model="title" />
       </div>
 
       <div class="form-group">
@@ -20,6 +20,7 @@
           optionLabel="_name"
           placeholder="Selecione a sala"
           class="w-full md:w-56"
+          :disabled="loading"
         />
       </div>
 
@@ -33,7 +34,7 @@
           showTime
           hourFormat="24"
           showIcon="true"
-          fluid
+          :disabled="loading"
         />
       </div>
 
@@ -47,6 +48,7 @@
           showTime
           hourFormat="24"
           showIcon="true"
+          :disabled="loading"
         />
       </div>
 
@@ -55,42 +57,50 @@
         <PVTextarea :disabled="loading" v-model="description" rows="5" cols="30" />
       </div>
 
-      <div class="form-group">
-        <PVButton label="Ativar/Desativar Recorrência" @click="toggleRecurrence" />
-      </div>
-
-      <div v-if="isRecurring" class="recurrence-config">
+      <div v-if="!isReserveEdition">
         <div class="form-group">
-          <label for="recurrenceEndDate">Data de Término da Recorrência</label>
-          <DatePicker
-            id="recurrenceEndDate"
-            v-model="recurrenceConfiguration.endDate"
-            :minDate="todayDate"
-            dateFormat="dd/mm/yy"
-            showIcon="true"
+          <PVButton
+            :disabled="loading"
+            label="Ativar/Desativar Recorrência"
+            @click="toggleRecurrence"
           />
         </div>
 
-        <div class="form-group">
-          <label>Dias da Semana</label>
-          <div class="weekdays-selector">
-            <label v-for="(day, index) in weekdays" :key="index">
-              <input
-                type="checkbox"
-                :value="day.value"
-                v-model="recurrenceConfiguration.selectedWeekdays"
-              />
-              {{ day.label }}
-            </label>
+        <div v-if="isRecurring" class="recurrence-config">
+          <div class="form-group">
+            <label for="recurrenceEndDate">Data de Término da Recorrência</label>
+            <DatePicker
+              id="recurrenceEndDate"
+              v-model="recurrenceConfiguration.endDate"
+              :minDate="todayDate"
+              dateFormat="dd/mm/yy"
+              showIcon="true"
+              :disabled="loading"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Dias da Semana</label>
+            <div class="weekdays-selector">
+              <label v-for="(day, index) in weekdays" :key="index">
+                <input
+                  type="checkbox"
+                  :value="day.value"
+                  v-model="recurrenceConfiguration.selectedWeekdays"
+                  :disabled="loading"
+                />
+                {{ day.label }}
+              </label>
+            </div>
           </div>
         </div>
       </div>
 
       <div v-if="isReserveEdition">
-        <PVButton class="pv-button-reservar" @click="submit">Salvar</PVButton>
+        <PVButton :disabled="loading" class="pv-button-reservar" @click="submit">Salvar</PVButton>
       </div>
       <div v-else>
-        <PVButton class="pv-button-reservar" @click="submit">Reservar</PVButton>
+        <PVButton :disabled="loading" class="pv-button-reservar" @click="submit">Reservar</PVButton>
       </div>
 
       <div v-if="errorMessage" class="error-message">
@@ -132,11 +142,13 @@ export default {
       loading: false,
       visible: false,
       isReserveEdition: this.isEdit,
-      title: this.reservation?.title || '',
-      description: this.reservation?.description || '',
-      roomSelected: this.reservation?.roomSelected || null,
-      startDateTime: this.reservation?.time?.start || currentDateTime,
-      endDateTime: this.reservation?.time?.end || currentDateTime,
+      ignoreStartDateTimeWatch: false,
+      id: null,
+      title: '',
+      description: '',
+      roomSelected: null,
+      startDateTime: currentDateTime,
+      endDateTime: currentDateTime,
       roomOptions: [],
       todayDate: currentDateTime,
       minDateAux: currentDateTime,
@@ -167,16 +179,16 @@ export default {
       immediate: true,
       handler(newReservation) {
         if (newReservation) {
-          this.title = newReservation.title || ''
-          this.description = newReservation.description || ''
-          this.roomSelected = newReservation.room || null
-          this.startDateTime = newReservation.time?.start || currentDateTime
-          this.endDateTime = newReservation.time?.end || currentDateTime
-          this.isRecurring = newReservation.isRecurring || false
-          this.recurrenceConfiguration = {
-            endDate: newReservation.recurrence?.endDate || null,
-            selectedWeekdays: newReservation.recurrence?.selectedWeekdays || []
-          }
+          const room = this.roomOptions.filter((room) => room._name === newReservation.roomName)[0]
+
+          this.ignoreStartDateTimeWatch = true
+          this.id = newReservation.id
+          this.title = newReservation.title
+          this.description = newReservation.description
+          this.roomSelected = room
+          this.startDateTime = new Date(newReservation.time.start)
+          this.endDateTime = new Date(newReservation.time.end)
+          this.isRecurring = newReservation.isRecurring
           this.headerDialog = 'Edição da reserva'
           this.isReserveEdition = true
         } else {
@@ -185,6 +197,11 @@ export default {
       }
     },
     startDateTime(newInitialDate, oldInitialDate) {
+      if (this.ignoreStartDateTimeWatch) {
+        this.ignoreStartDateTimeWatch = false
+        return
+      }
+
       if (newInitialDate == null) {
         this.startDateTime = currentDateTime
         this.endDateTime = currentDateTime
@@ -214,6 +231,9 @@ export default {
     },
     handleDialogHide() {
       this.$emit('closed')
+    },
+    save(body) {
+      this.$emit('save', body)
     },
     resetForm() {
       this.title = ''
@@ -289,7 +309,6 @@ export default {
       const token = authStore.getToken().value
       const startDateTimeFormatted = moment(this.startDateTime).format('DD-MM-yyyy, HH:mm')
       const endDateTimeFormatted = moment(this.endDateTime).format('DD-MM-yyyy, HH:mm')
-      
       const body = {
         title: this.title,
         roomId: this.roomSelected._roomId,
@@ -303,21 +322,28 @@ export default {
         }
       }
 
-      console.log(body)
-
       try {
-        await axiosInstance.post('/v1/reservations', body, {
-          headers: {
-            Authorization: token
-          }
-        })
+        if (this.isReserveEdition) {
+          await axiosInstance.put(`/v1/reservations/${this.id}`, body, {
+            headers: {
+              Authorization: token
+            }
+          })
+        } else {
+          await axiosInstance.post('/v1/reservations', body, {
+            headers: {
+              Authorization: token
+            }
+          })
+        }
 
-        this.showDialog()
-        await this.loadReservations()
+        this.save(body)
+        this.visible = true
       } catch (error) {
         const response = error.response
-        this.loading = false
         this.errorMessage = response.data.message
+      } finally {
+        this.loading = false
       }
     }
   }
