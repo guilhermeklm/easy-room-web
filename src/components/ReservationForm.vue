@@ -10,7 +10,7 @@
       <div class="form-group">
         <label for="title">Título</label>
         <InputText :disabled="loading" id="title" v-model="title" />
-      </div>
+      </div>  
 
       <div class="form-group">
         <label for="room">Sala</label>
@@ -34,7 +34,7 @@
           showTime
           hourFormat="24"
           showIcon="true"
-          :disabled="loading"
+          :disabled="loading || canModifyDate()"
         />
       </div>
 
@@ -48,7 +48,7 @@
           showTime
           hourFormat="24"
           showIcon="true"
-          :disabled="loading"
+          :disabled="loading || canModifyDate()"
         />
       </div>
 
@@ -96,6 +96,11 @@
         </div>
       </div>
 
+      <div v-if="isReserveEdition && isRecurring">
+        <PVCheckbox v-model="editAllReservations" binary />
+        <label for="editAll"> Editar todas as reservas? </label>
+      </div>
+
       <div v-if="isReserveEdition">
         <PVButton :disabled="loading" class="pv-button-reservar" @click="submit">Salvar</PVButton>
       </div>
@@ -120,6 +125,7 @@ import moment from 'moment'
 import axiosInstance from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
 import DatePicker from 'primevue/datepicker'
+import PVCheckbox from 'primevue/checkbox'
 
 const currentDateTime = moment().toDate()
 
@@ -131,7 +137,8 @@ export default {
     InputText,
     PVTextarea,
     PVSelect,
-    DatePicker
+    DatePicker,
+    PVCheckbox
   },
   props: {
     reservation: Object,
@@ -160,6 +167,7 @@ export default {
         selectedWeekdays: []
       },
       headerDialog: null,
+      editAllReservations: true,
       weekdays: [
         { label: 'Domingo', value: 0 },
         { label: 'Segunda', value: 1 },
@@ -191,6 +199,7 @@ export default {
           this.isRecurring = newReservation.isRecurring
           this.headerDialog = 'Edição da reserva'
           this.isReserveEdition = true
+          this.editAllReservations = true
         } else {
           this.resetForm()
         }
@@ -223,6 +232,15 @@ export default {
     }
   },
   methods: {
+    canModifyDate() {
+      if(this.isReserveEdition) {
+        if(this.isRecurring) {
+          return true
+        }
+        return false
+      }
+      return false
+    },
     addOneMonth(date) {
       return moment(date).add(1, 'month').toDate()
     },
@@ -236,6 +254,7 @@ export default {
       this.$emit('save', body)
     },
     resetForm() {
+      this.editAllReservations = false
       this.title = ''
       this.description = ''
       this.roomSelected = null
@@ -288,8 +307,8 @@ export default {
       if (
         !this.title ||
         !this.roomSelected ||
-        !this.startDateTime ||
-        !this.endDateTime ||
+        (!this.startDateTime && !this.editAllReservations) ||
+        (!this.endDateTime && !this.editAllReservations) ||
         !this.description
       ) {
         this.errorMessage = 'Todos os campos são obrigatórios.'
@@ -316,11 +335,14 @@ export default {
         endDateTime: endDateTimeFormatted,
         description: this.description,
         isRecurring: this.isRecurring,
+        applyToAll: this.editAllReservations,
         recurrence: {
           endDate: moment(this.recurrenceConfiguration.endDate).format('DD-MM-yyyy'),
           selectedWeekdays: this.recurrenceConfiguration.selectedWeekdays
         }
       }
+
+      console.log(body)
 
       try {
         if (this.isReserveEdition) {
@@ -388,6 +410,25 @@ label {
   float: right;
 }
 
+.recurrence-config {
+  margin-top: 16px;
+}
+
+.weekdays-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.weekdays-selector label {
+  display: flex;
+  align-items: center;
+}
+
+.weekdays-selector input {
+  margin-right: 4px;
+}
+
 @media (max-width: 1000px) {
   .p-dialog {
     width: 35em !important;
@@ -400,4 +441,3 @@ label {
   }
 }
 </style>
-

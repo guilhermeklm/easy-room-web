@@ -14,12 +14,22 @@ import Select from 'primevue/select';
 import Aura from '@primevue/themes/aura';
 import ConfirmationService from 'primevue/confirmationservice';
 import ConfirmDialog from 'primevue/confirmdialog';
+import MultiSelect from 'primevue/multiselect';
+import Accordion from 'primevue/accordion';
+import AccordionPanel from 'primevue/accordionpanel';
+import AccordionHeader from 'primevue/accordionheader';
+import AccordionContent from 'primevue/accordioncontent';
+import Checkbox from 'primevue/checkbox';
 import 'primeicons/primeicons.css'
 import moment from 'moment-timezone'
 import 'qalendar/dist/style.css';
 import Toast from 'primevue/toast';
 import ToastService from 'primevue/toastservice';
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { fas } from '@fortawesome/free-solid-svg-icons'
 moment.tz.setDefault('America/Sao_Paulo')
+library.add(fas)
 
 const pinia = createPinia()
 const app = createApp(App)
@@ -42,8 +52,15 @@ app.component(Textarea, 'PVTextarea')
 app.component(Select, 'PVSelect')
 app.component(ConfirmDialog, 'PVConfirmDialog')
 app.component(Toast, 'PVToast')
+app.component(MultiSelect, 'PvMultiSelect')
+app.component(Checkbox, 'PVCheckbox')
+app.component(Accordion)
+app.component(AccordionPanel)
+app.component(AccordionHeader)
+app.component(AccordionContent)
 app.component(InputText)
 app.component(VueSpinner)
 app.component(VueDatePicker)
+app.component('font-awesome-icon', FontAwesomeIcon)
 
 app.mount('#app')

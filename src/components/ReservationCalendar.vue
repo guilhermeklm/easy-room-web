@@ -15,9 +15,13 @@
       <p class="dialog-message" v-if="isEdit">
         <i class="pi pi-check">Reserva editada com sucesso!</i>
       </p>
-      <p class="dialog-message" v-else>
+      <p class="dialog-message" v-else-if="!isEdit">
         <i class="pi pi-check">Reserva criada com sucesso!</i>
       </p>
+      <p class="dialog-message" v-else-if="errorMessage">
+        {{ errorMessage }}
+      </p>
+
       <PVButton
         icon="pi pi-times"
         class="p-button-rounded p-button-text close-button"
@@ -26,30 +30,55 @@
     </div>
   </PVDialog>
 
-  <div class="button-container">
-    <PVButton label="Reservar sala" @click="onCreateReservation" class="reserve-button" />
-  </div>
+  <div class="container-reservation-calendar">
+    <div class="options">
+      <PVButton label="Reservar sala" @click="onCreateReservation" class="reserve-button" />
+      <div class="filters">
+        <Accordion value="0">
+          <AccordionPanel value="0">
+            <AccordionHeader>Filtros</AccordionHeader>
+            <AccordionContent>
+              <PvMultiSelect
+                v-model="selectedRooms"
+                :options="roomOptions"
+                optionLabel="_name"
+                placeholder="Selectione as salas"
+                :maxSelectedLabels="3"
+                class="w-full md:w-30rem room-filter"
+                :filter="true"
+                :invalid="invalidRoomFilter"
+                :disabled="loading"
+              />
+              <div v-if="invalidRoomFilter" class="error-message">
+                {{ 'Filtro obrigatorio' }}
+              </div>
+            </AccordionContent>
+          </AccordionPanel>
+        </Accordion>
+      </div>
+    </div>
 
-  <ReservationForm
-    :visible="showForm"
-    :reservation="selectedReservation"
-    :isEdit="isEdit"
-    @update:visible="showForm = $event"
-    @save="handleSave"
-    @closed="handleDialogClosed"
-  />
-
-  <div class="is-light-mode calendar-wrapper">
-    <Qalendar
-      :events="reservations"
-      :config="config"
-      :is-loading="loading"
-      @delete-event="onDeleteEvent"
-      @edit-event="onEditEvent"
+    <ReservationForm
+      :visible="showForm"
+      :reservation="selectedReservation"
+      :isEdit="isEdit"
+      @update:visible="showForm = $event"
+      @save="handleSave"
+      @closed="handleDialogClosed"
     />
 
-    <PVToast />
-    <PVConfirmDialog></PVConfirmDialog>
+    <div class="is-light-mode calendar-wrapper">
+      <Qalendar
+        :events="reservations"
+        :config="config"
+        :is-loading="loading"
+        @delete-event="onDeleteEvent"
+        @edit-event="onEditEvent"
+      />
+
+      <PVToast />
+      <PVConfirmDialog></PVConfirmDialog>
+    </div>
   </div>
 </template>
 
@@ -61,7 +90,13 @@ import PVButton from 'primevue/button'
 import { Qalendar } from 'qalendar'
 import PVConfirmDialog from 'primevue/confirmdialog'
 import PVToast from 'primevue/toast'
+import PvMultiSelect from 'primevue/multiselect'
 import ReservationForm from './ReservationForm.vue'
+import Accordion from 'primevue/accordion'
+import AccordionPanel from 'primevue/accordionpanel'
+import AccordionHeader from 'primevue/accordionheader'
+import AccordionContent from 'primevue/accordioncontent'
+import "../assets/reservationcalendar.css"
 
 export default {
   components: {
@@ -70,7 +105,12 @@ export default {
     Qalendar,
     PVConfirmDialog,
     PVToast,
-    ReservationForm
+    ReservationForm,
+    PvMultiSelect,
+    Accordion,
+    AccordionPanel,
+    AccordionHeader,
+    AccordionContent
   },
   data() {
     return {
@@ -81,6 +121,9 @@ export default {
       eventToDelete: null,
       deleteDialogVisible: false,
       selectedReservation: null,
+      roomOptions: [],
+      selectedRooms: null,
+      invalidRoomFilter: false,
       showForm: false,
       isEdit: false,
       config: {
@@ -91,13 +134,25 @@ export default {
     }
   },
   async created() {
+    await this.loadRooms()
     await this.loadReservations()
+  },
+  watch: {
+    selectedRooms: {
+      async handler() {
+        if (this.selectedRooms == null || this.selectedRooms.length == 0) {
+          this.invalidRoomFilter = true
+        } else {
+          this.invalidRoomFilter = false
+          await this.loadReservations()
+        }
+      }
+    }
   },
   methods: {
     onEditEvent(eventId) {
       const reservation = this.reservations.find((reservation) => reservation.id === eventId)
       if (reservation) {
-        console.log('edita evento')
         this.selectedReservation = reservation
         this.isEdit = true
         this.showForm = true
@@ -166,10 +221,21 @@ export default {
     },
     async loadReservations() {
       try {
+        this.loading = true
+
         const authStore = useAuthStore()
         const token = authStore.getToken().value
+        let urlBase = '/v1/reservations'
 
-        const response = await axiosInstance.get('/v1/reservations', {
+        this.selectedRooms.forEach((element, index) => {
+          if (index == 0) {
+            urlBase += '?roomsId=' + element._roomId
+          } else {
+            urlBase += '&roomsId=' + element._roomId
+          }
+        })
+
+        const response = await axiosInstance.get(urlBase, {
           headers: {
             Authorization: token
           }
@@ -185,6 +251,7 @@ export default {
               location: reservation.roomName + ' - ' + reservation.locationAddress,
               color: 'blue',
               isEditable: true,
+              isRecurring: reservation.isRecurring,
               roomName: reservation.roomName,
               time: {
                 start: reservation.startDateTime,
@@ -193,8 +260,34 @@ export default {
             })
           }
           this.reservations = reservations
+          console.log(this.reservations)
         }
       } catch (error) {
+        this.visible = true
+        this.errorMessage =
+          'Erro ao carregar as opções de salas. Por favor, tente novamente mais tarde.'
+        console.error(error)
+      } finally {
+        this.loading = false
+      }
+    },
+    async loadRooms() {
+      try {
+        const authStore = useAuthStore()
+        const token = authStore.getToken().value
+
+        const response = await axiosInstance.get('/v1/rooms', {
+          headers: {
+            Authorization: token
+          }
+        })
+
+        if (response.data) {
+          this.roomOptions = response.data.data
+          this.selectedRooms = [this.roomOptions[0]]
+        }
+      } catch (error) {
+        this.visible = true
         this.errorMessage =
           'Erro ao carregar as opções de salas. Por favor, tente novamente mais tarde.'
         console.error(error)
@@ -205,128 +298,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.button-container {
-  display: flex;
-  justify-content: flex-end;
-  margin: 10px 0;
-}
-
-.reserve-button {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
-  transition: background-color 0.3s;
-}
-
-.reserve-button:hover {
-  background-color: #0056b3;
-}
-
-.form-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  position: relative;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 45%; 
-  min-width: 300px;
-}
-
-.full-width {
-  flex: 1 1 100%; 
-}
-
-.overlay {
-  position: absolute; 
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(255, 255, 255, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000; 
-}
-
-.error-message {
-  color: red;
-  margin-top: 16px;
-}
-
-.responsive-dialog {
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.dialog-content {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  padding: 1rem;
-}
-
-.dialog-message {
-  font-size: calc(1r20 + 0.5vw);
-}
-
-.calendar-wrapper {
-  padding: 20px 10px;
-  max-width: 100%;
-  height: 90vh;
-  overflow: auto;
-}
-
-.recurrence-config {
-  margin-top: 16px;
-}
-
-.weekdays-selector {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.weekdays-selector label {
-  display: flex;
-  align-items: center;
-}
-
-.weekdays-selector input {
-  margin-right: 4px;
-}
-
-.delete-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5); 
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-.delete-spinner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: white;
-  padding: 10px;
-  border-radius: 50%;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-}
-</style>

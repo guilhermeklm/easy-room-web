@@ -1,0 +1,86 @@
+.container-reservation-calendar {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 20px 10px;
+}
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  margin: 10px 0;
+}
+
+.filters {
+  width: 100%;
+}
+
+.room-filter {
+  width: 100%;
+}
+
+.reserve-button {
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  background-color: #efbe31 !important;
+  border: 0px !important;
+  transition: background-color 0.3s ease, transform 0.2s ease !important;
+}
+
+.reserve-button:hover {
+  transform: scale(1.05);
+}
+
+.form-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  position: relative;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 250px;
+  margin-right: 10px;
+}
+
+.error-message {
+  color: red;
+  margin-top: 16px;
+}
+
+.responsive-dialog {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 1rem;
+}
+
+.dialog-message {
+  font-size: calc(1r20 + 0.5vw);
+}
+
+.calendar-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  max-width: 100%;
+  height: 90vh;
+  overflow: auto;
+  width: 1320px;
+  height: 1150px;
+}
