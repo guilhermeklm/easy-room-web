@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import IndexView from '../views/IndexView.vue'
+import CreateAccount  from '../views/CreateAccount.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -8,6 +9,11 @@ const router = createRouter({
       path: '/',
       name: 'index',
       component: IndexView
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: CreateAccount
     },
     {
       path: '/login',

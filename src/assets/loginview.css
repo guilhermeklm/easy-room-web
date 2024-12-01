@@ -5,6 +5,10 @@
   height: 100vh;
 }
 
+.login-title {
+  display: none;
+}
+
 .login {
   display: flex;
   flex-direction: column;
@@ -74,5 +78,9 @@
 @media only screen and (max-height: 435px) {
   .logo {
     display: none;
+  }
+
+  .login-title {
+    display: block;
   }
 }

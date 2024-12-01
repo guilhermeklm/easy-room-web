@@ -3,6 +3,8 @@
     <div class="login">
       <img src="../assets/logo-er.png" alt="Logo do Sistema" class="logo" />
 
+      <h1 class="login-title"> Login </h1>
+
       <div class="box-login">
         <label class="label" for="email">Email</label>
         <InputText class="input" id="email" v-model="email" aria-describedby="username-help" />
@@ -11,14 +13,14 @@
         <Password class="input" id="password" v-model="password" :feedback="false" />
 
         <PVButton type="button" class="login-button" @click="login">Entrar</PVButton>
-
-        <div class="register-link">
-          <span>Não possui uma conta? </span>
-          <a @click.prevent="register" href="#">Criar conta</a>
-        </div>
-
+        
         <div v-if="errorMessage" class="error-message">
           {{ errorMessage }}
+        </div>
+
+        <div class="register-link">
+          <span> Não possui uma conta? </span>
+          <a @click.prevent="register" href="/register">Criar conta</a>
         </div>
       </div>
     </div>
