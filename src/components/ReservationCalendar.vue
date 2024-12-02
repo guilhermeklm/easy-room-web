@@ -32,7 +32,9 @@
 
   <div class="container-reservation-calendar">
     <div class="options">
-      <PVButton label="Reservar sala" @click="onCreateReservation" class="reserve-button" />
+      <div>
+        <PVButton label="Reservar sala" @click="onCreateReservation" class="reserve-button" />
+      </div>
       <div class="filters">
         <Accordion value="0">
           <AccordionPanel value="0">
@@ -96,7 +98,7 @@ import Accordion from 'primevue/accordion'
 import AccordionPanel from 'primevue/accordionpanel'
 import AccordionHeader from 'primevue/accordionheader'
 import AccordionContent from 'primevue/accordioncontent'
-import "../assets/reservationcalendar.css"
+import '../assets/reservationcalendar.css'
 
 export default {
   components: {

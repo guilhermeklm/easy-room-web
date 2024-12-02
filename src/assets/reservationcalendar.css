@@ -45,7 +45,6 @@
 .options {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   width: 250px;
   margin-right: 10px;
 }
@@ -83,4 +82,21 @@
   overflow: auto;
   width: 1320px;
   height: 1150px;
+}
+
+@media only screen and (max-width: 750px) {
+  .container-reservation-calendar {
+    flex-direction: column;
+  }
+
+  .options {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .filters {
+    width: 55%;
+  }
 }
