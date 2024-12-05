@@ -84,6 +84,16 @@
   height: 1150px;
 }
 
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  padding-top: 10px;
+}
+
+label {
+  margin-left: 6px;
+}
+
 @media only screen and (max-width: 750px) {
   .container-reservation-calendar {
     flex-direction: column;

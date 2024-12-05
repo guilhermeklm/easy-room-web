@@ -79,7 +79,17 @@
       />
 
       <PVToast />
-      <PVConfirmDialog></PVConfirmDialog>
+      <PVConfirmDialog group="deleteEvent">
+        <template #message="slotProps">
+          <div>
+            <h2>{{ slotProps.message.message }}</h2>
+            <div v-if="isRecurringReservationToDelete" class="checkbox-container">
+              <input type="checkbox" id="deleteRecurringCheckbox" v-model="deleteRecurringReservations" />
+              <label for="deleteRecurringCheckbox">Excluir todas as reservas recorrentes</label>
+            </div>
+          </div>
+        </template>
+      </PVConfirmDialog>
     </div>
   </div>
 </template>
@@ -98,7 +108,6 @@ import Accordion from 'primevue/accordion'
 import AccordionPanel from 'primevue/accordionpanel'
 import AccordionHeader from 'primevue/accordionheader'
 import AccordionContent from 'primevue/accordioncontent'
-import '../assets/reservationcalendar.css'
 
 export default {
   components: {
@@ -120,7 +129,8 @@ export default {
       errorMessage: null,
       loading: true,
       reservations: [],
-      eventToDelete: null,
+      eventIdToDelete: null,
+      isRecurringReservationToDelete: false,
       deleteDialogVisible: false,
       selectedReservation: null,
       roomOptions: [],
@@ -128,6 +138,7 @@ export default {
       invalidRoomFilter: false,
       showForm: false,
       isEdit: false,
+      deleteRecurringReservations: false,
       config: {
         defaultMode: 'week',
         showCurrentTime: true,
@@ -166,6 +177,7 @@ export default {
     },
     handleDialogClosed() {
       this.selectedReservation = null
+      this.isRecurringReservationToDelete = false
       this.loadReservations()
     },
     onCreateReservation() {
@@ -174,9 +186,16 @@ export default {
     },
     onDeleteEvent(eventId) {
       this.eventIdToDelete = eventId
+      this.deleteRecurringReservations = false
+
+      const reservation = this.reservations.find((res) => res.id === this.eventIdToDelete)
+
+      this.isRecurringReservationToDelete = reservation.isRecurring
+
       this.$confirm.require({
+        group: 'deleteEvent',
         message: 'Deseja remover esta reserva?',
-        header: 'Confirmation',
+        header: 'Exlusão da reserva',
         icon: 'pi pi-exclamation-triangle',
         rejectProps: {
           label: 'Cancelar',
@@ -199,8 +218,16 @@ export default {
       try {
         const authStore = useAuthStore()
         const token = authStore.getToken().value
+        this.is
 
-        await axiosInstance.delete(`/v1/reservations/${this.eventIdToDelete}`, {
+        let url = `/v1/reservations/${this.eventIdToDelete}`
+        if (this.deleteRecurringReservations) {
+          url += '?deleteRecurring=true'
+        }
+
+        console.log(url)
+
+        await axiosInstance.delete(url, {
           headers: {
             Authorization: token
           }
@@ -209,10 +236,13 @@ export default {
         this.deleteDialogVisible = false
         this.eventIdToDelete = null
         this.loading = false
+
         this.$toast.add({
           severity: 'info',
           summary: 'Removido',
-          detail: 'A reserva foi removida',
+          detail: this.deleteRecurringReservations
+            ? 'A reserva e todas as reservas recorrentes foram removidas.'
+            : 'A reserva foi removida.',
           life: 3000
         })
         this.loadReservations()
@@ -262,7 +292,6 @@ export default {
             })
           }
           this.reservations = reservations
-          console.log(this.reservations)
         }
       } catch (error) {
         this.visible = true
@@ -300,3 +329,5 @@ export default {
   }
 }
 </script>
+
+<style lang="css" scoped src="../assets/reservationcalendar.css"></style>

@@ -10,7 +10,7 @@
       <div class="form-group">
         <label for="title">Título</label>
         <InputText :disabled="loading" id="title" v-model="title" />
-      </div>  
+      </div>
 
       <div class="form-group">
         <label for="room">Sala</label>
@@ -22,6 +22,28 @@
           class="w-full md:w-56"
           :disabled="loading"
         />
+
+        <div v-if="roomSelected" class="room-resources">
+          <img
+            :src="'data:image/png;base64' + roomSelected._image"
+            alt="Imagem da Sala"
+            class="room-image"
+          />
+          <ul class="ul-resources">
+            <p>Recursos:</p>
+            <li class="li-resources" title="Número de assentos">
+              <font-awesome-icon class="fa-icon-padding" :icon="['fas', 'chair']" /> {{ roomSelected._numberOfSeats }}
+            </li>
+            <li
+              class="li-resources"
+              v-for="resource in roomSelected._resources"
+              :key="resource._name"
+              :title="resource._description"
+            >
+              <font-awesome-icon class="fa-icon-padding" :icon="getResourceIcon(resource._name)" /> {{ resource._name }}
+            </li>
+          </ul>
+        </div>
       </div>
 
       <div class="form-group">
@@ -188,7 +210,6 @@ export default {
       handler(newReservation) {
         if (newReservation) {
           const room = this.roomOptions.filter((room) => room._name === newReservation.roomName)[0]
-
           this.ignoreStartDateTimeWatch = true
           this.id = newReservation.id
           this.title = newReservation.title
@@ -232,9 +253,16 @@ export default {
     }
   },
   methods: {
+    getResourceIcon(resourceName) {
+      const icons = {
+        Projetor: 'video',
+        'Quadro Branco': 'chalkboard'
+      }
+      return ['fas', icons[resourceName] || 'question-circle']
+    },
     canModifyDate() {
-      if(this.isReserveEdition) {
-        if(this.isRecurring) {
+      if (this.isReserveEdition) {
+        if (this.isRecurring) {
           return true
         }
         return false
@@ -429,6 +457,34 @@ label {
   margin-right: 4px;
 }
 
+.room-resources {
+  display: flex;
+  padding: 10px 0;
+}
+
+.room-image {
+  width: 450px;
+  height: 270px;
+}
+
+.room-image > img {
+  width: 100%;
+  height: 100%;
+}
+
+.ul-resources {
+  list-style: none;
+  padding: 0px 7px;
+}
+
+.li-resources {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 10px;
+  padding-top: 10px;
+}
+
 @media (max-width: 1000px) {
   .p-dialog {
     width: 35em !important;
@@ -438,6 +494,30 @@ label {
 @media (max-width: 768px) {
   .p-dialog {
     width: 25em !important;
+  }
+
+  .room-image {
+    width: 100%;
+  }
+
+  .room-resources {
+    flex-direction: column;
+  }
+
+  .ul-resources {
+    padding-top: 10px;
+    padding-left: 0;
+    display: flex;
+  }
+
+  .li-resources {
+    gap: 0;
+    padding-left: 9px;
+    padding-top: 0;
+  }
+
+  .li-resources > .fa-icon-padding {
+    padding-right: 6px;
   }
 }
 </style>

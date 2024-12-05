@@ -20,4 +20,8 @@ html {
 textarea {
   resize: none;
 }
+
+ul {
+  list-style: none;
+}
 </style>
