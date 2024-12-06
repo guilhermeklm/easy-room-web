@@ -42,8 +42,8 @@ export default {
   },
   data() {
     return {
-      email: 'guilherme.klm22@gmail.com',
-      password: 'senha123',
+      email: '',
+      password: '',
       errorMessage: ''
     }
   },
