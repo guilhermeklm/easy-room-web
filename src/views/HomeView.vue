@@ -19,11 +19,11 @@
                 >Calendário</a
               >
             </li>
-            <li>
+            <!-- <li>
               <a @click.prevent="showComponent('reservationsHistory')" href="#historico"
                 >Histórico de Reservas</a
               >
-            </li>
+            </li> -->
           </ul>
         </div>
       </nav>
