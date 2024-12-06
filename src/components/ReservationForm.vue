@@ -245,7 +245,7 @@ export default {
       const oldInitialDateFormatted = moment(oldInitialDate).toDate()
 
       if (newValue > oldInitialDateFormatted) {
-        this.endDateTime = newValue
+        this.endDateTime = moment(newValue).add('1', 'hour').toDate()
       }
 
       this.recurrenceConfiguration.endDate = this.addOneMonth(newInitialDate)
