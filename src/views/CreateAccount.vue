@@ -30,6 +30,16 @@
             />
           </div>
           <PVButton type="button" class="login-button" @click="handleSubmit">Criar</PVButton>
+          <div style="text-align: center;">
+            <ProgressSpinner
+              style="width: 50px; height: 50px"
+              v-show="loading"
+              strokeWidth="8"
+              fill="transparent"
+              animationDuration="1s"
+              aria-label="Custom ProgressSpinner"
+            />
+          </div>
           <div v-if="errorMessage" class="error-message">
             {{ errorMessage }}
           </div>
@@ -44,12 +54,14 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import PVButton from 'primevue/button'
 import http from '@/services/http.js'
+import ProgressSpinner from 'primevue/progressspinner'
 
 export default {
   components: {
     InputText,
     Password,
-    PVButton
+    PVButton,
+    ProgressSpinner
   },
   data() {
     return {
@@ -57,11 +69,14 @@ export default {
       email: '',
       password: '',
       confirmPassword: '',
-      errorMessage: null
+      errorMessage: null,
+      loading: false
     }
   },
   methods: {
     async handleSubmit() {
+      this.loading = true
+
       if (this.password !== this.confirmPassword) {
         this.errorMessage = 'As senhas não coincidem!'
         return
@@ -75,15 +90,17 @@ export default {
           password: this.password
         })
 
-        if(data.status == "success") {
+        if (data.status == 'success') {
           this.$router.push({ name: 'login' })
+          this.loading = false
         } else {
-          throw new Error("error")
+          this.loading = false
+          this.errorMessage = data.error.message
         }
-
       } catch (error) {
+        this.loading = false
         console.log(error)
-        this.errorMessage = "Ocorreu algum erro interno dentro do servidor, contate o suporte"
+        this.errorMessage = 'Ocorreu algum erro interno dentro do servidor, contate o suporte'
       }
     }
   }

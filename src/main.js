@@ -28,6 +28,7 @@ import ToastService from 'primevue/toastservice';
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { fas } from '@fortawesome/free-solid-svg-icons'
+import ProgressSpinner from 'primevue/progressspinner';
 moment.tz.setDefault('America/Sao_Paulo')
 library.add(fas)
 
@@ -54,6 +55,7 @@ app.component(ConfirmDialog, 'PVConfirmDialog')
 app.component(Toast, 'PVToast')
 app.component(MultiSelect, 'PvMultiSelect')
 app.component(Checkbox, 'PVCheckbox')
+app.component(ProgressSpinner)
 app.component(Accordion)
 app.component(AccordionPanel)
 app.component(AccordionHeader)
