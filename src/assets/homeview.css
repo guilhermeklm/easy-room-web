@@ -15,7 +15,8 @@
 
 .user-name {
   padding-right: 20px;
-  margin: 0
+  margin: 0;
+  font-size: 15px;
 }
 
 .logout-btn {
@@ -67,7 +68,7 @@ nav ul {
   list-style: none;
   display: flex;
   gap: 2rem;
-  font-size: 19px;
+  font-size: 23px;
 }
 
 nav ul li {
@@ -135,11 +136,27 @@ nav label {
   align-items: center;
 }
 
+@media only screen and (max-width: 880px) {
+  .logo-er {
+    width: 80px;
+    height: 70px;
+  }
+
+  nav ul {
+    font-size: 19px;
+  }
+}
+
+
 @media only screen and (max-width: 708px) {
   nav .menu {
     width: 100%;
     height: 0;
     overflow: hidden;
+  }
+
+  .logo {
+    padding-left: 0;
   }
 
   nav ul {
