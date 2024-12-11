@@ -32,7 +32,8 @@
           <ul class="ul-resources">
             <p>Recursos:</p>
             <li class="li-resources" title="Número de assentos">
-              <font-awesome-icon class="fa-icon-padding" :icon="['fas', 'chair']" /> {{ roomSelected._numberOfSeats }}
+              <font-awesome-icon class="fa-icon-padding" :icon="['fas', 'chair']" />
+              {{ roomSelected._numberOfSeats }}
             </li>
             <li
               class="li-resources"
@@ -40,7 +41,8 @@
               :key="resource._name"
               :title="resource._description"
             >
-              <font-awesome-icon class="fa-icon-padding" :icon="getResourceIcon(resource._name)" /> {{ resource._name }}
+              <font-awesome-icon class="fa-icon-padding" :icon="getResourceIcon(resource._name)" />
+              {{ resource._name }}
             </li>
           </ul>
         </div>
@@ -56,7 +58,7 @@
           showTime
           hourFormat="24"
           showIcon="true"
-          :disabled="loading || canModifyDate()"
+          :disabled="loading || canNotModifyDate()"
         />
       </div>
 
@@ -70,7 +72,7 @@
           showTime
           hourFormat="24"
           showIcon="true"
-          :disabled="loading || canModifyDate()"
+          :disabled="loading || canNotModifyDate()"
         />
       </div>
 
@@ -220,7 +222,9 @@ export default {
           this.isRecurring = newReservation.isRecurring
           this.headerDialog = 'Edição da reserva'
           this.isReserveEdition = true
-          this.editAllReservations = true
+          if (this.isRecurring) {
+            this.editAllReservations = true
+          }
         } else {
           this.resetForm()
         }
@@ -260,14 +264,8 @@ export default {
       }
       return ['fas', icons[resourceName] || 'question-circle']
     },
-    canModifyDate() {
-      if (this.isReserveEdition) {
-        if (this.isRecurring) {
-          return true
-        }
-        return false
-      }
-      return false
+    canNotModifyDate() {
+      return this.editAllReservations
     },
     addOneMonth(date) {
       return moment(date).add(1, 'month').toDate()
@@ -344,7 +342,7 @@ export default {
         return
       }
 
-      if (this.isRecurring) {
+      if (this.isRecurring && !this.isReserveEdition) {
         if (!this.recurrenceConfiguration.endDate) {
           this.errorMessage = 'Data final da recorrencia é obrigatoria'
           this.loading = false
