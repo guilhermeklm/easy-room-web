@@ -43,6 +43,7 @@
             >
               <font-awesome-icon class="fa-icon-padding" :icon="getResourceIcon(resource._name)" />
               {{ resource._name }}
+              <dir v-if="resource._quantity">({{ resource._quantity }})</dir>
             </li>
           </ul>
         </div>
@@ -260,7 +261,8 @@ export default {
     getResourceIcon(resourceName) {
       const icons = {
         Projetor: 'video',
-        'Quadro Branco': 'chalkboard'
+        'Quadro Branco': 'chalkboard',
+        'Computador': 'computer'
       }
       return ['fas', icons[resourceName] || 'question-circle']
     },

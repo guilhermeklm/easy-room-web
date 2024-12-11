@@ -45,7 +45,7 @@
                 :options="roomOptions"
                 optionLabel="_name"
                 placeholder="Selectione as salas"
-                :maxSelectedLabels="3"
+                :selectionLimit=2
                 class="w-full md:w-30rem room-filter"
                 :filter="true"
                 :invalid="invalidRoomFilter"
