@@ -25,7 +25,7 @@
 
         <div v-if="roomSelected" class="room-resources">
           <img
-            :src="'data:image/png;base64' + roomSelected._image"
+            :src="`/images/${roomSelected._image}.jpeg`"
             alt="Imagem da Sala"
             class="room-image"
           />
@@ -260,7 +260,9 @@ export default {
   methods: {
     getResourceIcon(resourceName) {
       const icons = {
-        Projetor: 'video',
+        'TV': 'tv',
+        'Projetor': 'video',
+        'Notebook': 'laptop',
         'Quadro Branco': 'chalkboard',
         'Computador': 'computer'
       }
